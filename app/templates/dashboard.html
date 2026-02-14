@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    <article class="panel p-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wide">Créditos</p>
+        <p class="mt-2 text-2xl font-bold">{{ user.credits }}</p>
+    </article>
+    <article class="panel p-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wide">Perfil</p>
+        <p class="mt-2 text-sm font-semibold">
+            {% if user.is_admin %}
+                <span class="badge badge-info">Super Admin</span>
+            {% else %}
+                <span class="badge badge-muted">Padrão</span>
+            {% endif %}
+        </p>
+    </article>
+    <article class="panel p-4 sm:col-span-2 xl:col-span-2">
+        <p class="text-xs text-slate-400 uppercase tracking-wide">Usuário</p>
+        <p class="mt-2 text-sm sm:text-base font-medium break-all">{{ user.email }}</p>
+    </article>
+</section>
+
+<div class="grid xl:grid-cols-3 gap-6">
+    <section class="xl:col-span-2 panel p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h1 class="text-2xl font-bold">Painel de Produção</h1>
+            <span class="text-sm text-slate-300">
+                Créditos disponíveis: <strong>{{ user.credits }}</strong>
+            </span>
+        </div>
+
+        {% if error %}<p class="mb-4 text-red-300 text-sm">{{ error }}</p>{% endif %}
+
+        <form
+            id="generation_form"
+            action="/generation/create"
+            method="post"
+            enctype="multipart/form-data"
+            class="space-y-4"
+        >
+            <div>
+                <label class="text-sm text-slate-300">Tipo de entrada</label>
+                <select id="source_type" name="source_type" class="input">
+                    <option value="text">Texto/tema</option>
+                    <option value="link">Link</option>
+                    <option value="video">Vídeo/Áudio para transcrição</option>
+                </select>
+            </div>
+
+            <div id="source_content_group">
+                <label class="text-sm text-slate-300">Conteúdo base</label>
+                <textarea
+                    id="source_content"
+                    name="source_content"
+                    rows="6"
+                    required
+                    class="input"
+                    placeholder="Ex: Tendências de IA para pequenas empresas em 2026"
+                ></textarea>
+                <p class="mt-2 text-xs text-slate-400">
+                    Para vídeo/áudio, o conteúdo pode ficar vazio.
+                </p>
+            </div>
+
+            <div id="source_file_group" class="hidden">
+                <label class="text-sm text-slate-300">Arquivo de vídeo/áudio</label>
+                <input
+                    id="source_file"
+                    name="source_file"
+                    type="file"
+                    accept="video/*,audio/*"
+                    class="input"
+                />
+                <p class="mt-2 text-xs text-slate-400">
+                    Formatos comuns: mp4, mov, mp3, wav, m4a.
+                </p>
+            </div>
+
+            <div id="upload_feedback" class="hidden rounded-xl border border-slate-800 bg-slate-900 p-3">
+                <div class="flex items-center justify-between text-xs sm:text-sm text-slate-300 mb-2">
+                    <span id="upload_status_text">Enviando arquivo...</span>
+                    <span id="upload_percent">0%</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                    <div id="upload_progress_bar" class="upload-progress-fill"></div>
+                </div>
+            </div>
+
+            <p id="client_error" class="hidden text-red-300 text-sm"></p>
+            <button
+                id="generate_button"
+                class="w-full sm:w-auto px-6 py-3 btn-primary"
+                {% if user.credits < 1 %}disabled{% endif %}
+            >
+                Gerar 3 roteiros e vídeos
+            </button>
+        </form>
+    </section>
+
+    <aside class="panel p-6">
+        <h2 class="text-lg font-semibold mb-4">Conta</h2>
+        <p class="text-sm text-slate-300 mb-2">Usuário: {{ user.email }}</p>
+        <p class="text-sm text-slate-300 mb-4">Perfil: {% if user.is_admin %}Super Admin{% else %}Padrão{% endif %}</p>
+        {% if user.is_admin %}
+            <a href="/admin/users" class="px-4 py-2 btn-muted text-sm">Gerenciar usuários</a>
+        {% endif %}
+    </aside>
+</div>
+
+<section class="mt-6 panel p-6">
+    <h2 class="text-lg font-semibold mb-4">Últimas Gerações</h2>
+    <div class="table-wrap">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-slate-300 border-b border-slate-800">
+                    <th class="py-2">ID</th>
+                    <th class="py-2">Variante</th>
+                    <th class="py-2">Status</th>
+                    <th class="py-2">Provider</th>
+                    <th class="py-2">Saída</th>
+                    <th class="py-2">Data</th>
+                </tr>
+            </thead>
+            <tbody id="jobs_table_body">
+                {% for job in jobs %}
+                <tr class="border-b border-slate-900/80">
+                    <td class="py-2">{{ job.id }}</td>
+                    <td class="py-2">{{ job.script_variant }}</td>
+                    <td class="py-2">
+                        {% if job.status in ['queued', 'simulado'] %}
+                            <span class="badge badge-info">{{ job.status }}</span>
+                        {% elif job.status in ['done', 'completed'] %}
+                            <span class="badge badge-success">{{ job.status }}</span>
+                        {% else %}
+                            <span class="badge badge-muted">{{ job.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-2">{{ job.provider }}</td>
+                    <td class="py-2">
+                        {% if job.output_url %}
+                            <a
+                                href="{{ job.output_url }}"
+                                target="_blank"
+                                class="text-indigo-300 hover:text-indigo-200"
+                            >
+                                Abrir
+                            </a>
+                        {% else %}
+                            <span class="text-slate-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-2">{{ job.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="py-4 text-slate-400">Sem gerações ainda.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    const generationForm = document.getElementById("generation_form");
+    const sourceType = document.getElementById("source_type");
+    const sourceContent = document.getElementById("source_content");
+    const fileGroup = document.getElementById("source_file_group");
+    const sourceFile = document.getElementById("source_file");
+    const uploadFeedback = document.getElementById("upload_feedback");
+    const uploadStatusText = document.getElementById("upload_status_text");
+    const uploadPercent = document.getElementById("upload_percent");
+    const uploadProgressBar = document.getElementById("upload_progress_bar");
+    const generateButton = document.getElementById("generate_button");
+    const clientError = document.getElementById("client_error");
+    const jobsTableBody = document.getElementById("jobs_table_body");
+
+    const maxUploadBytes = 25 * 1024 * 1024;
+    const allowedExtensions = [
+        "mp4", "mov", "mkv", "webm", "mp3", "wav", "m4a", "aac"
+    ];
+
+    function resetClientError() {
+        clientError.textContent = "";
+        clientError.classList.add("hidden");
+    }
+
+    function showClientError(message) {
+        clientError.textContent = message;
+        clientError.classList.remove("hidden");
+    }
+
+    function resetUploadUi() {
+        uploadFeedback.classList.add("hidden");
+        uploadStatusText.textContent = "Enviando arquivo...";
+        uploadPercent.textContent = "0%";
+        uploadProgressBar.style.width = "0%";
+    }
+
+    function toggleInputs() {
+        const isVideo = sourceType.value === "video";
+        fileGroup.classList.toggle("hidden", !isVideo);
+        sourceContent.required = !isVideo;
+        sourceFile.required = isVideo;
+        resetClientError();
+        resetUploadUi();
+    }
+
+    function badgeClassForStatus(status) {
+        if (["queued", "simulado", "fetching", "rendering"].includes(status)) {
+            return "badge badge-info";
+        }
+
+        if (["done", "completed"].includes(status)) {
+            return "badge badge-success";
+        }
+
+        return "badge badge-muted";
+    }
+
+    function renderJobsTable(jobs) {
+        if (!jobsTableBody) {
+            return;
+        }
+
+        if (!jobs || jobs.length === 0) {
+            jobsTableBody.innerHTML = (
+                '<tr><td colspan="6" class="py-4 text-slate-400">' +
+                "Sem gerações ainda." +
+                "</td></tr>"
+            );
+            return;
+        }
+
+        const rows = jobs.map((job) => {
+            const outputHtml = job.output_url
+                ? `<a href="${job.output_url}" target="_blank" class="text-indigo-300 hover:text-indigo-200">Abrir</a>`
+                : '<span class="text-slate-400">-</span>';
+
+            return `
+                <tr class="border-b border-slate-900/80">
+                    <td class="py-2">${job.id}</td>
+                    <td class="py-2">${job.script_variant}</td>
+                    <td class="py-2">
+                        <span class="${badgeClassForStatus(job.status)}">${job.status}</span>
+                    </td>
+                    <td class="py-2">${job.provider}</td>
+                    <td class="py-2">${outputHtml}</td>
+                    <td class="py-2">${job.created_at}</td>
+                </tr>
+            `;
+        });
+
+        jobsTableBody.innerHTML = rows.join("");
+    }
+
+    async function pollJobsStatus() {
+        try {
+            const response = await fetch("/dashboard/jobs/live", {
+                method: "GET",
+                headers: { "Accept": "application/json" },
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            renderJobsTable(payload.jobs || []);
+        } catch (error) {
+            return;
+        }
+    }
+
+    generationForm.addEventListener("submit", function (event) {
+        resetClientError();
+
+        const isVideo = sourceType.value === "video";
+        if (!isVideo) {
+            return;
+        }
+
+        const selectedFile = sourceFile.files && sourceFile.files[0];
+        if (!selectedFile) {
+            event.preventDefault();
+            showClientError("Selecione um arquivo de vídeo/áudio para continuar.");
+            return;
+        }
+
+        const extension = selectedFile.name.includes(".")
+            ? selectedFile.name.split(".").pop().toLowerCase()
+            : "";
+
+        if (!allowedExtensions.includes(extension)) {
+            event.preventDefault();
+            showClientError(
+                "Formato inválido. Use mp4, mov, mkv, webm, mp3, wav, m4a ou aac."
+            );
+            return;
+        }
+
+        if (selectedFile.size > maxUploadBytes) {
+            event.preventDefault();
+            showClientError("Arquivo excede 25MB. Reduza o tamanho e tente novamente.");
+            return;
+        }
+
+        event.preventDefault();
+        uploadFeedback.classList.remove("hidden");
+        generateButton.disabled = true;
+        generateButton.textContent = "Processando...";
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", generationForm.action, true);
+        xhr.responseType = "text";
+
+        xhr.upload.onprogress = function (progressEvent) {
+            if (!progressEvent.lengthComputable) {
+                return;
+            }
+
+            const percent = Math.round(
+                (progressEvent.loaded / progressEvent.total) * 100
+            );
+            uploadProgressBar.style.width = `${percent}%`;
+            uploadPercent.textContent = `${percent}%`;
+            uploadStatusText.textContent = "Enviando arquivo...";
+        };
+
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                uploadProgressBar.style.width = "100%";
+                uploadPercent.textContent = "100%";
+                uploadStatusText.textContent = "Finalizando geração...";
+                document.open();
+                document.write(xhr.responseText);
+                document.close();
+                return;
+            }
+
+            generateButton.disabled = false;
+            generateButton.textContent = "Gerar 3 roteiros e vídeos";
+            showClientError("Falha no envio. Tente novamente em instantes.");
+        };
+
+        xhr.onerror = function () {
+            generateButton.disabled = false;
+            generateButton.textContent = "Gerar 3 roteiros e vídeos";
+            showClientError("Erro de rede durante o upload. Tente novamente.");
+        };
+
+        xhr.send(new FormData(generationForm));
+    });
+
+    sourceType.addEventListener("change", toggleInputs);
+    toggleInputs();
+
+    pollJobsStatus();
+    setInterval(pollJobsStatus, 8000);
+</script>
+{% endblock %}

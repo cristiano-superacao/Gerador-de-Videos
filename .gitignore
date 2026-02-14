@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.agentes_ia.db
+agentes_ia.db
+.pytest_cache/

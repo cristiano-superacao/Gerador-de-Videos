@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel p-6 sm:p-8">
+    <div class="max-w-4xl">
+        <p class="text-xs uppercase tracking-wide text-indigo-300 mb-3">Guia oficial</p>
+        <h1 class="text-3xl sm:text-4xl font-bold mb-4">Como usar o Agentes IA Studio</h1>
+        <p class="text-slate-300 mb-6">
+            Siga este passo a passo para criar roteiros e vídeos com qualidade profissional.
+        </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-4 sm:gap-5">
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 1</p>
+            <h2 class="text-lg font-semibold mb-2">Crie sua conta</h2>
+            <p class="text-sm text-slate-300">
+                Acesse o cadastro, informe e-mail e senha e entre no dashboard.
+            </p>
+        </article>
+
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 2</p>
+            <h2 class="text-lg font-semibold mb-2">Escolha o tipo de entrada</h2>
+            <p class="text-sm text-slate-300">
+                Use texto/link para tema direto ou vídeo/áudio para transcrição automática.
+            </p>
+        </article>
+
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 3</p>
+            <h2 class="text-lg font-semibold mb-2">Preencha ou envie arquivo</h2>
+            <p class="text-sm text-slate-300">
+                Para texto/link, descreva o tema com contexto. Para vídeo/áudio, envie um arquivo válido
+                até 25MB e acompanhe a barra de progresso.
+            </p>
+        </article>
+
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 4</p>
+            <h2 class="text-lg font-semibold mb-2">Gere o pacote de conteúdo</h2>
+            <p class="text-sm text-slate-300">
+                Clique em “Gerar 3 roteiros e vídeos”. O sistema consome 1 crédito por lote.
+            </p>
+        </article>
+
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 5</p>
+            <h2 class="text-lg font-semibold mb-2">Acompanhe status em tempo real</h2>
+            <p class="text-sm text-slate-300">
+                A tabela do dashboard atualiza automaticamente o status do render e libera o link “Abrir”
+                quando o vídeo estiver pronto.
+            </p>
+        </article>
+
+        <article class="panel p-5">
+            <p class="text-xs text-indigo-300 mb-2">Passo 6</p>
+            <h2 class="text-lg font-semibold mb-2">Administre usuários e créditos</h2>
+            <p class="text-sm text-slate-300">
+                Usuários admin podem ajustar créditos no painel de administração.
+            </p>
+        </article>
+    </div>
+
+    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a href="/dashboard" class="px-5 py-3 btn-primary text-sm">Ir para dashboard</a>
+        <a href="/login" class="px-5 py-3 btn-muted text-sm">Entrar</a>
+    </div>
+</section>
+{% endblock %}

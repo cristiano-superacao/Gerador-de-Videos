@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+        <p class="inline-flex rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-200 mb-5">Pipeline completo com múltiplas IAs</p>
+        <h1 class="text-3xl sm:text-5xl font-bold leading-tight">Crie 3 roteiros e vídeos sociais a partir de links, texto ou vídeo</h1>
+        <p class="mt-5 text-slate-300 text-base sm:text-lg">Uma plataforma modular com ingestão, pesquisa profunda, storytelling criativo e renderização automatizada para escalar sua produção.</p>
+        <div class="mt-7 flex flex-col sm:flex-row gap-3">
+            <a href="/register" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-center font-medium">Começar agora</a>
+            <a href="/login" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-center font-medium">Já tenho conta</a>
+        </div>
+    </div>
+    <div class="panel p-6 sm:p-8">
+        <h2 class="text-xl font-semibold mb-4">Arquitetura implementada</h2>
+        <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
+            <li>Ingestor: entrada por tema/link/texto</li>
+            <li>Researcher: Tavily/Perplexity para contexto de mercado</li>
+            <li>Storyteller: geração de 3 roteiros curtos</li>
+            <li>VideoGen: integração pronta para Shotstack</li>
+            <li>Admin: gestão de usuários e créditos</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

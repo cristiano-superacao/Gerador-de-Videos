@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <h1 class="text-2xl font-bold">Administração de Usuários</h1>
+        <a href="/dashboard" class="px-4 py-2 btn-muted text-sm">Voltar ao dashboard</a>
+    </div>
+    <div class="table-wrap">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-slate-300 border-b border-slate-800">
+                    <th class="py-2">ID</th>
+                    <th class="py-2">E-mail</th>
+                    <th class="py-2">Admin</th>
+                    <th class="py-2">Créditos</th>
+                    <th class="py-2">Atualizar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="border-b border-slate-900/80">
+                    <td class="py-2">{{ user.id }}</td>
+                    <td class="py-2 break-all">{{ user.email }}</td>
+                    <td class="py-2">
+                        {% if user.is_admin %}
+                            <span class="badge badge-info">Sim</span>
+                        {% else %}
+                            <span class="badge badge-muted">Não</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-2">{{ user.credits }}</td>
+                    <td class="py-2">
+                        <form
+                            action="/admin/users/{{ user.id }}/credits"
+                            method="post"
+                            class="flex gap-2"
+                        >
+                            <input type="number" min="0" name="credits" value="{{ user.credits }}" class="input max-w-24" />
+                            <button class="px-3 py-2 btn-primary">Salvar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
