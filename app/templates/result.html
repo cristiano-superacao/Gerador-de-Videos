@@ -12,8 +12,13 @@
             <h2 class="font-semibold mb-2">Vídeo {{ item.script_variant }}</h2>
             <p class="text-xs text-slate-400 mb-3">Status: {{ item.status }} | Provider: {{ item.provider }}</p>
             <p class="text-sm text-slate-300 whitespace-pre-wrap">{{ item.script }}</p>
-            {% if item.output_url %}
+            {% if item.message %}
+                <p class="mt-3 text-xs text-slate-400">{{ item.message }}</p>
+            {% endif %}
+            {% if item.output_url and 'example.com/video-preview.mp4' not in item.output_url %}
                 <a href="{{ item.output_url }}" target="_blank" class="mt-4 inline-flex text-indigo-300 hover:text-indigo-200">Abrir vídeo</a>
+            {% elif item.status == 'simulado' %}
+                <p class="mt-4 text-xs text-amber-300">Render em modo simulado (sem link real de vídeo).</p>
             {% endif %}
         </article>
         {% endfor %}

@@ -16,13 +16,21 @@ router = APIRouter(tags=["dashboard"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+def _normalize_output_url(url: str | None) -> str:
+    if not url:
+        return ""
+    if "example.com/video-preview.mp4" in url:
+        return ""
+    return url
+
+
 def _serialize_job(job: VideoJob) -> dict:
     return {
         "id": job.id,
         "script_variant": job.script_variant,
         "status": job.status,
         "provider": job.provider,
-        "output_url": job.output_url or "",
+        "output_url": _normalize_output_url(job.output_url),
         "created_at": job.created_at.strftime("%d/%m/%Y %H:%M"),
     }
 

@@ -138,7 +138,7 @@
                     </td>
                     <td class="py-2">{{ job.provider }}</td>
                     <td class="py-2">
-                        {% if job.output_url %}
+                        {% if job.output_url and 'example.com/video-preview.mp4' not in job.output_url %}
                             <a
                                 href="{{ job.output_url }}"
                                 target="_blank"
@@ -232,7 +232,12 @@
         }
 
         const rows = jobs.map((job) => {
-            const outputHtml = job.output_url
+            const validOutputUrl = (
+                job.output_url
+                && !job.output_url.includes("example.com/video-preview.mp4")
+            );
+
+            const outputHtml = validOutputUrl
                 ? `<a href="${job.output_url}" target="_blank" class="text-indigo-300 hover:text-indigo-200">Abrir</a>`
                 : '<span class="text-slate-400">-</span>';
 

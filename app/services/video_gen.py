@@ -12,7 +12,7 @@ class VideoGenerator:
                 "status": "simulado",
                 "provider": "shotstack",
                 "render_id": "mock-render-id",
-                "output_url": "https://example.com/video-preview.mp4",
+                "output_url": "",
                 "message": (
                     "Configure SHOTSTACK_API_KEY e SHOTSTACK_OWNER_ID "
                     "para render real."
@@ -82,10 +82,7 @@ class VideoGenerator:
             return {"status": "queued", "output_url": ""}
 
         if not settings.shotstack_api_key or render_id == "mock-render-id":
-            return {
-                "status": "simulado",
-                "output_url": "https://example.com/video-preview.mp4",
-            }
+            return {"status": "simulado", "output_url": ""}
 
         headers = {"x-api-key": settings.shotstack_api_key}
         url = f"https://api.shotstack.io/stage/render/{render_id}"
