@@ -47,6 +47,7 @@ uvicorn main:app --reload
 Acesse:
 
 - Home: <http://localhost:8000/>
+- Guia de uso: <http://localhost:8000/como-usar>
 - Login: <http://localhost:8000/login>
 - Admin inicial: `admin@agentesia.com` / `admin123`
 
@@ -67,3 +68,17 @@ Acesse:
 
 - Sem chaves externas, o sistema usa respostas simuladas para facilitar desenvolvimento inicial.
 - O consumo de créditos está configurado para 1 crédito por lote (3 vídeos).
+
+## Seed e teste client
+
+```bash
+python scripts/seed.py
+python scripts/client_smoke_test.py
+```
+
+Para Railway com CLI já linkado ao projeto:
+
+```bash
+railway run python scripts/seed.py
+railway run python scripts/client_smoke_test.py
+```
