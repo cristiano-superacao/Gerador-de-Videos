@@ -8,15 +8,26 @@
 
     <div class="grid md:grid-cols-3 gap-4">
         {% for item in created_jobs %}
-        <article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <article class="panel p-4">
             <h2 class="font-semibold mb-2">Vídeo {{ item.script_variant }}</h2>
-            <p class="text-xs text-slate-400 mb-3">Status: {{ item.status }} | Provider: {{ item.provider }}</p>
-            <p class="text-sm text-slate-300 whitespace-pre-wrap">{{ item.script }}</p>
+            <p class="text-xs text-slate-400 mb-3 flex items-center gap-2 flex-wrap">
+                <span>Status:</span>
+                {% if item.status in ['queued', 'simulado', 'fetching', 'rendering'] %}
+                    <span class="badge badge-info">{{ item.status }}</span>
+                {% elif item.status in ['done', 'completed'] %}
+                    <span class="badge badge-success">{{ item.status }}</span>
+                {% else %}
+                    <span class="badge badge-muted">{{ item.status }}</span>
+                {% endif %}
+                <span class="ml-2">Provider:</span>
+                <span class="badge badge-muted">{{ item.provider|capitalize }}</span>
+            </p>
+            <p class="text-sm text-slate-300 whitespace-pre-wrap break-words leading-relaxed">{{ item.script }}</p>
             {% if item.message %}
                 <p class="mt-3 text-xs text-slate-400">{{ item.message }}</p>
             {% endif %}
             {% if item.output_url and 'example.com/video-preview.mp4' not in item.output_url %}
-                <a href="{{ item.output_url }}" target="_blank" class="mt-4 inline-flex text-indigo-300 hover:text-indigo-200">Abrir vídeo</a>
+                <a href="{{ item.output_url }}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex text-indigo-300 hover:text-indigo-200">Abrir vídeo</a>
             {% elif item.status == 'simulado' %}
                 <p class="mt-4 text-xs text-amber-300">Render em modo simulado (sem link real de vídeo).</p>
             {% endif %}

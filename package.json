@@ -1,0 +1,9 @@
+{
+  "name": "agentes-ia-studio",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": ".venv\\Scripts\\python.exe -m uvicorn main:app --reload",
+    "install:py": ".venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+  }
+}

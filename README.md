@@ -25,11 +25,14 @@ requirements.txt
 
 ## Rodando localmente
 
+> Importante: este projeto é Python (FastAPI) e não usa Node/NPM para build do front. Se você tentou `npm rum dev` (além do typo em "rum"), verá erro de `package.json` inexistente. Use os comandos abaixo.
 1. Crie e ative um ambiente virtual.
 1. Instale dependências:
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+.venv\\Scripts\\activate
+python -m pip install -r requirements.txt
 ```
 
 1. Copie variáveis:
@@ -41,9 +44,16 @@ copy .env.example .env
 1. Suba a aplicação:
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
+Opcional (para quem prefere `npm run dev`): adicionamos um `package.json` com scripts que chamam o Python da venv. Após criar a venv e instalar os requisitos, você pode usar:
+
+```bash
+npm run dev
+```
+
+Caso receba erro ao usar `npm run dev`, verifique se a venv `.venv` existe e se o Windows está permitindo execução de scripts.
 Acesse:
 
 - Home: <http://localhost:8000/>
