@@ -77,7 +77,11 @@ async def dashboard_jobs_live(
 
         status_payload = await generator.get_render_status(job.render_id)
         new_status = status_payload.get("status") or job.status
-        new_output_url = status_payload.get("output_url") or job.output_url
+        new_output_url = status_payload.get("output_url")
+        
+        # Só atualiza output_url se não for None (mantém o valor existente em modo simulado)
+        if new_output_url is None:
+            new_output_url = job.output_url
 
         if (
             new_status != job.status

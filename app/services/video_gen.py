@@ -8,11 +8,21 @@ from app.core.config import settings
 class VideoGenerator:
     async def render_script(self, script: str, title: str) -> Dict[str, str]:
         if not settings.shotstack_api_key or not settings.shotstack_owner_id:
+            # URLs de demonstração do Shotstack para modo simulado
+            demo_videos = [
+                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/8a85ba4a-58dc-4981-91ca-5289d9ae6d5e.mp4",
+                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/e8077f59-f17a-4e37-b703-6c8a16d7f49e.mp4",
+                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4",
+            ]
+            import hashlib
+            # Seleciona um vídeo de demo baseado no hash do título
+            video_index = int(hashlib.md5(title.encode()).hexdigest(), 16) % len(demo_videos)
+            
             return {
                 "status": "simulado",
                 "provider": "shotstack",
                 "render_id": "mock-render-id",
-                "output_url": "",
+                "output_url": demo_videos[video_index],
                 "message": (
                     "Configure SHOTSTACK_API_KEY e SHOTSTACK_OWNER_ID "
                     "para render real."
@@ -82,7 +92,8 @@ class VideoGenerator:
             return {"status": "queued", "output_url": ""}
 
         if not settings.shotstack_api_key or render_id == "mock-render-id":
-            return {"status": "simulado", "output_url": ""}
+            # Mantém o output_url existente no banco para modo simulado
+            return {"status": "simulado", "output_url": None}
 
         headers = {"x-api-key": settings.shotstack_api_key}
         url = f"https://api.shotstack.io/stage/render/{render_id}"

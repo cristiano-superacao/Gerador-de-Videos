@@ -76,7 +76,9 @@ Acesse:
 
 ## Observações
 
-- Sem chaves externas, o sistema usa respostas simuladas para facilitar desenvolvimento inicial.
+- **Modo Demonstração**: Sem as chaves da API do Shotstack (`SHOTSTACK_API_KEY` e `SHOTSTACK_OWNER_ID`), o sistema funciona em modo demonstração com vídeos de exemplo. Para gerar vídeos reais customizados, configure as chaves seguindo as instruções no arquivo `.env.example`.
+- **Visualização e Download**: No dashboard, você pode visualizar e baixar os vídeos gerados clicando nos botões "Visualizar" e "Baixar" na coluna "Saída".
+- Sem chaves externas de IA (OpenAI, Tavily, Perplexity), o sistema usa respostas simuladas para facilitar desenvolvimento inicial.
 - O consumo de créditos está configurado para 1 crédito por lote (3 vídeos).
 
 ## Seed e teste client
