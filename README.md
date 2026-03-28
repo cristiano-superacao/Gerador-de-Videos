@@ -106,6 +106,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\railway_seed_and_smoke.ps1
 O script usa a `DATABASE_PUBLIC_URL` do serviço Postgres para semear o banco remoto
 e depois executa o mesmo `client_smoke_test.py` contra a URL pública do serviço `api`.
 
+Para validar todas as funcionalidades diretamente no Railway, incluindo E2E desktop e mobile:
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\scripts\railway_full_validation.ps1
+```
+
 ## Testes automatizados
 
 Os testes em pytest usam banco SQLite isolado por execução e validam autenticação,
