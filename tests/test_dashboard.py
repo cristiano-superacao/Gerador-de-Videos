@@ -58,6 +58,35 @@ def test_dashboard_embeds_initial_jobs_json(client, db_session):
     assert "Baixar" in response.text
 
 
+def test_dashboard_hides_suspended_demo_video_links(client, db_session):
+    register(client, "dashboard.demo.blocked@example.com", "senha123")
+    login(client, "dashboard.demo.blocked@example.com", "senha123")
+    user = get_user(db_session, "dashboard.demo.blocked@example.com")
+
+    job = VideoJob(
+        user_id=user.id,
+        source_type="text",
+        source_content="conteudo demo",
+        script_variant=1,
+        status="simulado",
+        provider="shotstack",
+        render_id="mock-render-id",
+        output_url=(
+            "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
+            "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4"
+        ),
+    )
+    db_session.add(job)
+    db_session.commit()
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "Modo demonstração" in response.text
+    assert "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4" not in response.text
+    assert "Visualizar" not in response.text
+
+
 def test_dashboard_jobs_live_updates_pending_render(
     client,
     db_session,

@@ -8,8 +8,8 @@
     {% endif %}
 {%- endmacro %}
 
-{% macro output_actions(output_url, empty_label='-') -%}
-    {% if output_url and 'example.com/video-preview.mp4' not in output_url %}
+{% macro output_actions(output_url, status=None, empty_label='-') -%}
+    {% if output_url %}
         <div class="flex gap-2">
             <a
                 href="{{ output_url }}"
@@ -30,6 +30,10 @@
                 Baixar
             </a>
         </div>
+    {% elif status == 'simulado' %}
+        <span class="text-amber-300">Modo demonstração</span>
+    {% elif status in ['queued', 'fetching', 'rendering'] %}
+        <span class="text-slate-400">Aguardando render</span>
     {% else %}
         <span class="text-slate-400">{{ empty_label }}</span>
     {% endif %}

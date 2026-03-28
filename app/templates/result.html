@@ -21,11 +21,7 @@
             {% if item.message %}
                 <p class="mt-3 text-xs text-slate-400">{{ item.message }}</p>
             {% endif %}
-            {% if item.output_url and 'example.com/video-preview.mp4' not in item.output_url %}
-                <div class="mt-4">{{ job_ui.output_actions(item.output_url, 'Sem saída') }}</div>
-            {% elif item.status == 'simulado' %}
-                <p class="mt-4 text-xs text-amber-300">Render em modo simulado (sem link real de vídeo).</p>
-            {% endif %}
+            <div class="mt-4">{{ job_ui.output_actions(item.output_url, item.status, 'Sem saída') }}</div>
         </article>
         {% endfor %}
     </div>

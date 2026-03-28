@@ -10,7 +10,7 @@
         {% endif %}
     </td>
     <td class="py-2">{{ job.provider }}</td>
-    <td class="py-2">{{ job_ui.output_actions(job.output_url) }}</td>
+    <td class="py-2">{{ job_ui.output_actions(job.output_url, job.status, 'Sem mídia') }}</td>
     <td class="py-2">{{ job.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
 </tr>
 {% else %}

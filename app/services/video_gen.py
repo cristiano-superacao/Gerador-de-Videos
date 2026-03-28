@@ -8,24 +8,15 @@ from app.core.config import settings
 class VideoGenerator:
     async def render_script(self, script: str, title: str) -> Dict[str, str]:
         if not settings.shotstack_api_key or not settings.shotstack_owner_id:
-            # URLs de demonstração do Shotstack para modo simulado
-            demo_videos = [
-                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/8a85ba4a-58dc-4981-91ca-5289d9ae6d5e.mp4",
-                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/e8077f59-f17a-4e37-b703-6c8a16d7f49e.mp4",
-                "https://cdn.shotstack.io/au/v1/msgtwx8iw6/3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4",
-            ]
-            import hashlib
-            # Seleciona um vídeo de demo baseado no hash do título
-            video_index = int(hashlib.md5(title.encode()).hexdigest(), 16) % len(demo_videos)
-            
             return {
                 "status": "simulado",
                 "provider": "shotstack",
                 "render_id": "mock-render-id",
-                "output_url": demo_videos[video_index],
+                "output_url": "",
                 "message": (
                     "Configure SHOTSTACK_API_KEY e SHOTSTACK_OWNER_ID "
-                    "para render real."
+                    "para render real. No modo demonstração, o sistema "
+                    "mostra o roteiro sem publicar um link externo de vídeo."
                 ),
             }
 

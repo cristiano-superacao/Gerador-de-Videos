@@ -13,20 +13,6 @@ from app.services.user_service import upsert_user  # noqa: E402
 
 
 SEED_MARKER = "[seed-demo]"
-DEMO_VIDEO_URLS = [
-    (
-        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
-        "8a85ba4a-58dc-4981-91ca-5289d9ae6d5e.mp4"
-    ),
-    (
-        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
-        "e8077f59-f17a-4e37-b703-6c8a16d7f49e.mp4"
-    ),
-    (
-        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
-        "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4"
-    ),
-]
 
 
 def ensure_user(
@@ -80,10 +66,10 @@ def create_seed_jobs(user_id: int) -> None:
                 f"{SEED_MARKER} Tendências de IA aplicada a vendas B2B."
             ),
             "script_variant": 1,
-            "status": "completed",
+            "status": "simulado",
             "provider": "shotstack",
-            "render_id": "seed-render-completed",
-            "output_url": DEMO_VIDEO_URLS[0],
+            "render_id": "mock-render-id",
+            "output_url": "",
         },
         {
             "source_type": "link",
@@ -103,7 +89,7 @@ def create_seed_jobs(user_id: int) -> None:
             "status": "simulado",
             "provider": "shotstack",
             "render_id": "mock-render-id",
-            "output_url": DEMO_VIDEO_URLS[1],
+            "output_url": "",
         },
         {
             "source_type": "text",
