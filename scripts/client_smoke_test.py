@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -8,9 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.core.database import SessionLocal  # noqa: E402
-from app.models.user import User  # noqa: E402
-
 
 def assert_status(response: httpx.Response, expected: int, name: str) -> None:
     if response.status_code != expected:
@@ -19,19 +17,27 @@ def assert_status(response: httpx.Response, expected: int, name: str) -> None:
         )
 
 
-def get_user_id(email: str) -> int:
-    db = SessionLocal()
-    try:
-        user = (
-            db.query(User)
-            .filter(User.email == email.lower().strip())
-            .first()
+def get_user_id_from_admin_page(html: str, email: str) -> int:
+    normalized_email = email.lower().strip()
+    rows = re.findall(
+        r"<tr[^>]*>(.*?)</tr>",
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    for row in rows:
+        if normalized_email not in row.lower():
+            continue
+
+        match = re.search(
+            r'action="/admin/users/(\d+)/credits"',
+            row,
+            flags=re.IGNORECASE,
         )
-        if not user:
-            raise RuntimeError(f"user lookup failed: {email}")
-        return user.id
-    finally:
-        db.close()
+        if match:
+            return int(match.group(1))
+
+    raise RuntimeError(f"user lookup failed via admin page: {email}")
 
 
 def main() -> None:
@@ -43,8 +49,6 @@ def main() -> None:
     password = os.getenv("TEST_APP_USER_PASSWORD", "18042016")
     admin_email = os.getenv("TEST_ADMIN_EMAIL", "admin@agentesia.com")
     admin_password = os.getenv("TEST_ADMIN_PASSWORD", "admin123")
-    user_id = get_user_id(email)
-
     with httpx.Client(
         base_url=base_url,
         follow_redirects=True,
@@ -116,6 +120,7 @@ def main() -> None:
 
         response = client.get("/admin/users")
         assert_status(response, 200, "admin-users")
+        user_id = get_user_id_from_admin_page(response.text, email)
 
         response = client.post(
             f"/admin/users/{user_id}/credits",

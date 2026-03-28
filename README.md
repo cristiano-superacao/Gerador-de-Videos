@@ -90,6 +90,13 @@ python scripts/client_smoke_test.py
 pytest
 ```
 
+Para validar a instância publicada com o mesmo client smoke:
+
+```bash
+set APP_BASE_URL=https://api-production-fb1e.up.railway.app
+python scripts/client_smoke_test.py
+```
+
 Para Railway com CLI já linkado ao projeto:
 
 ```bash
