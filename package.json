@@ -4,6 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "dev": ".venv\\Scripts\\python.exe -m uvicorn main:app --reload",
-    "install:py": ".venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+    "install:py": ".venv\\Scripts\\python.exe -m pip install -r requirements.txt",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:mobile": "playwright test tests-e2e/dashboard.mobile.spec.js",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.2"
   }
 }

@@ -1,38 +1,17 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
-from app.models.video import VideoJob
 from app.routes.deps import get_admin_user, get_current_user
-from app.services.job_service import get_recent_jobs
+from app.services.job_service import get_recent_jobs, serialize_job
 from app.services.video_gen import VideoGenerator
+from app.web import render_dashboard, render_jobs_rows, templates
 
 
 router = APIRouter(tags=["dashboard"])
-templates = Jinja2Templates(directory="app/templates")
-
-
-def _normalize_output_url(url: str | None) -> str:
-    if not url:
-        return ""
-    if "example.com/video-preview.mp4" in url:
-        return ""
-    return url
-
-
-def _serialize_job(job: VideoJob) -> dict:
-    return {
-        "id": job.id,
-        "script_variant": job.script_variant,
-        "status": job.status,
-        "provider": job.provider,
-        "output_url": _normalize_output_url(job.output_url),
-        "created_at": job.created_at.strftime("%d/%m/%Y %H:%M"),
-    }
 
 
 @router.get("/dashboard")
@@ -42,17 +21,19 @@ def dashboard(
     db: Session = Depends(get_db),
 ):
     jobs = get_recent_jobs(db=db, user_id=current_user.id)
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {"request": request, "user": current_user, "jobs": jobs},
+    return render_dashboard(
+        request=request,
+        user=current_user,
+        jobs=jobs,
     )
 
 
 @router.get("/como-usar")
 def how_to_use(request: Request):
     return templates.TemplateResponse(
-        "how_to_use.html",
-        {"request": request},
+        request=request,
+        name="how_to_use.html",
+        context={"request": request},
     )
 
 
@@ -78,8 +59,8 @@ async def dashboard_jobs_live(
         status_payload = await generator.get_render_status(job.render_id)
         new_status = status_payload.get("status") or job.status
         new_output_url = status_payload.get("output_url")
-        
-        # Só atualiza output_url se não for None (mantém o valor existente em modo simulado)
+
+        # Mantém o valor persistido quando o provider não retorna link novo.
         if new_output_url is None:
             new_output_url = job.output_url
 
@@ -95,7 +76,11 @@ async def dashboard_jobs_live(
         db.commit()
 
     return JSONResponse(
-        {"jobs": [_serialize_job(job) for job in jobs]}
+        {
+            "jobs": [serialize_job(job) for job in jobs],
+            "html": render_jobs_rows(jobs),
+            "has_demo_mode": any(job.status == "simulado" for job in jobs),
+        }
     )
 
 
@@ -107,8 +92,9 @@ def admin_users(
 ):
     users = db.query(User).order_by(User.id.desc()).all()
     return templates.TemplateResponse(
-        "admin_users.html",
-        {"request": request, "users": users},
+        request=request,
+        name="admin_users.html",
+        context={"request": request, "users": users},
     )
 
 

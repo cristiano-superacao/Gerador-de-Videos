@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import hash_password, verify_password
+from app.core.security import verify_password
 from app.models.user import User
+from app.services.user_service import upsert_user
+from app.web import render_auth_page, templates
 
 
 router = APIRouter(tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/")
@@ -17,14 +17,20 @@ def home(request: Request):
     user_id = request.session.get("user_id")
     if user_id:
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"request": request},
+    )
 
 
 @router.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": None},
+    return render_auth_page(
+        request=request,
+        heading="Entrar",
+        action_url="/login",
+        submit_label="Acessar painel",
     )
 
 
@@ -37,9 +43,12 @@ def login(
 ):
     user = db.query(User).filter(User.email == email.lower().strip()).first()
     if not user or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Credenciais inválidas"},
+        return render_auth_page(
+            request=request,
+            heading="Entrar",
+            action_url="/login",
+            submit_label="Acessar painel",
+            error="Credenciais inválidas",
             status_code=400,
         )
 
@@ -49,9 +58,13 @@ def login(
 
 @router.get("/register")
 def register_page(request: Request):
-    return templates.TemplateResponse(
-        "register.html",
-        {"request": request, "error": None},
+    return render_auth_page(
+        request=request,
+        heading="Criar conta",
+        action_url="/register",
+        submit_label="Criar conta",
+        password_minlength=6,
+        helper_text="Use pelo menos 6 caracteres na senha.",
     )
 
 
@@ -65,9 +78,14 @@ def register(
     normalized_email = email.lower().strip()
 
     if db.query(User).filter(User.email == normalized_email).first():
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": "E-mail já cadastrado"},
+        return render_auth_page(
+            request=request,
+            heading="Criar conta",
+            action_url="/register",
+            submit_label="Criar conta",
+            error="E-mail já cadastrado",
+            password_minlength=6,
+            helper_text="Use pelo menos 6 caracteres na senha.",
             status_code=400,
         )
 
@@ -76,13 +94,13 @@ def register(
     if admin_email and normalized_email == admin_email:
         is_admin = True
 
-    user = User(
+    upsert_user(
+        db=db,
         email=normalized_email,
-        hashed_password=hash_password(password),
+        password=password,
         is_admin=is_admin,
         credits=10 if is_admin else 5,
     )
-    db.add(user)
     db.commit()
 
     return RedirectResponse(url="/login", status_code=302)

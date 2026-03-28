@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -8,24 +7,30 @@ from app.models.user import User
 from app.models.video import VideoJob
 from app.routes.deps import get_current_user
 from app.services.ai_engine import ContentEngine
+from app.services.generation_rules import ALLOWED_MEDIA_EXTENSIONS
+from app.services.generation_rules import MAX_UPLOAD_SIZE_BYTES
+from app.services.generation_rules import get_allowed_media_extensions_label
 from app.services.job_service import get_recent_jobs
 from app.services.video_gen import VideoGenerator
+from app.web import render_dashboard, templates
 
 
 router = APIRouter(prefix="/generation", tags=["generation"])
-templates = Jinja2Templates(directory="app/templates")
 
-ALLOWED_MEDIA_EXTENSIONS = {
-    ".mp4",
-    ".mov",
-    ".mkv",
-    ".webm",
-    ".mp3",
-    ".wav",
-    ".m4a",
-    ".aac",
-}
-MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024
+
+def _dashboard_error(
+    request: Request,
+    user: User,
+    jobs: list[VideoJob],
+    message: str,
+):
+    return render_dashboard(
+        request=request,
+        user=user,
+        jobs=jobs,
+        error=message,
+        status_code=400,
+    )
 
 
 @router.post("/create")
@@ -40,40 +45,28 @@ async def create_generation(
     jobs = get_recent_jobs(db=db, user_id=current_user.id)
 
     if current_user.credits < 1:
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request,
-                "user": current_user,
-                "jobs": jobs,
-                "error": "Créditos insuficientes para gerar novos vídeos.",
-            },
-            status_code=400,
+        return _dashboard_error(
+            request=request,
+            user=current_user,
+            jobs=jobs,
+            message="Créditos insuficientes para gerar novos vídeos.",
         )
 
     clean_content = source_content.strip()
     if source_type in ["text", "link"] and not clean_content:
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request,
-                "user": current_user,
-                "jobs": jobs,
-                "error": "Informe um conteúdo base para texto ou link.",
-            },
-            status_code=400,
+        return _dashboard_error(
+            request=request,
+            user=current_user,
+            jobs=jobs,
+            message="Informe um conteúdo base para texto ou link.",
         )
 
     if source_type == "video" and not source_file:
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request,
-                "user": current_user,
-                "jobs": jobs,
-                "error": "Envie um arquivo de vídeo/áudio para transcrição.",
-            },
-            status_code=400,
+        return _dashboard_error(
+            request=request,
+            user=current_user,
+            jobs=jobs,
+            message="Envie um arquivo de vídeo/áudio para transcrição.",
         )
 
     if source_type == "video" and source_file:
@@ -83,18 +76,14 @@ async def create_generation(
             extension = f".{file_name.rsplit('.', 1)[1].lower()}"
 
         if extension not in ALLOWED_MEDIA_EXTENSIONS:
-            return templates.TemplateResponse(
-                "dashboard.html",
-                {
-                    "request": request,
-                    "user": current_user,
-                    "jobs": jobs,
-                    "error": (
-                        "Formato não permitido. Use mp4, mov, mkv, webm, "
-                        "mp3, wav, m4a ou aac."
-                    ),
-                },
-                status_code=400,
+            return _dashboard_error(
+                request=request,
+                user=current_user,
+                jobs=jobs,
+                message=(
+                    "Formato não permitido. Use "
+                    f"{get_allowed_media_extensions_label()}."
+                ),
             )
 
     content_engine = ContentEngine()
@@ -105,18 +94,15 @@ async def create_generation(
 
     if source_type == "video" and uploaded_bytes:
         if len(uploaded_bytes) > MAX_UPLOAD_SIZE_BYTES:
-            return templates.TemplateResponse(
-                "dashboard.html",
-                {
-                    "request": request,
-                    "user": current_user,
-                    "jobs": jobs,
-                    "error": (
-                        "Arquivo excede 25MB. "
-                        "Reduza o tamanho e tente novamente."
-                    ),
-                },
-                status_code=400,
+            return _dashboard_error(
+                request=request,
+                user=current_user,
+                jobs=jobs,
+                message=(
+                    "Arquivo excede "
+                    f"{MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)}MB. "
+                    "Reduza o tamanho e tente novamente."
+                ),
             )
 
     persisted_source = clean_content
@@ -164,8 +150,9 @@ async def create_generation(
     db.commit()
 
     return templates.TemplateResponse(
-        "result.html",
-        {
+        request=request,
+        name="result.html",
+        context={
             "request": request,
             "user": current_user,
             "created_jobs": created_jobs,

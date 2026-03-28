@@ -8,12 +8,30 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.core.database import SessionLocal  # noqa: E402
+from app.models.user import User  # noqa: E402
+
 
 def assert_status(response: httpx.Response, expected: int, name: str) -> None:
     if response.status_code != expected:
         raise RuntimeError(
             f"{name} failed: expected {expected}, got {response.status_code}"
         )
+
+
+def get_user_id(email: str) -> int:
+    db = SessionLocal()
+    try:
+        user = (
+            db.query(User)
+            .filter(User.email == email.lower().strip())
+            .first()
+        )
+        if not user:
+            raise RuntimeError(f"user lookup failed: {email}")
+        return user.id
+    finally:
+        db.close()
 
 
 def main() -> None:
@@ -23,8 +41,15 @@ def main() -> None:
         "cristiano.s.santos@ba.estudante.senai.br",
     )
     password = os.getenv("TEST_APP_USER_PASSWORD", "18042016")
+    admin_email = os.getenv("TEST_ADMIN_EMAIL", "admin@agentesia.com")
+    admin_password = os.getenv("TEST_ADMIN_PASSWORD", "admin123")
+    user_id = get_user_id(email)
 
-    with httpx.Client(base_url=base_url, follow_redirects=True, timeout=60.0) as client:
+    with httpx.Client(
+        base_url=base_url,
+        follow_redirects=True,
+        timeout=60.0,
+    ) as client:
         response = client.get("/")
         assert_status(response, 200, "home")
 
@@ -47,7 +72,32 @@ def main() -> None:
                 "source_content": "Tendências de IA para indústria em 2026",
             },
         )
-        assert_status(response, 200, "generation")
+        assert_status(response, 200, "generation-text")
+
+        response = client.post(
+            "/generation/create",
+            data={
+                "source_type": "link",
+                "source_content": "https://example.com/insights-ia-manufatura",
+            },
+        )
+        assert_status(response, 200, "generation-link")
+
+        response = client.post(
+            "/generation/create",
+            data={
+                "source_type": "video",
+                "source_content": "",
+            },
+            files={
+                "source_file": (
+                    "amostra.mp3",
+                    b"fake-audio-content",
+                    "audio/mpeg",
+                ),
+            },
+        )
+        assert_status(response, 200, "generation-video")
 
         response = client.get("/dashboard/jobs/live")
         assert_status(response, 200, "jobs-live")
@@ -57,6 +107,24 @@ def main() -> None:
 
         response = client.post("/logout")
         assert_status(response, 200, "logout")
+
+        response = client.post(
+            "/login",
+            data={"email": admin_email, "password": admin_password},
+        )
+        assert_status(response, 200, "login-admin")
+
+        response = client.get("/admin/users")
+        assert_status(response, 200, "admin-users")
+
+        response = client.post(
+            f"/admin/users/{user_id}/credits",
+            data={"credits": 50},
+        )
+        assert_status(response, 200, "admin-update-credits")
+
+        response = client.post("/logout")
+        assert_status(response, 200, "logout-admin")
 
     print("client-smoke-test:ok")
 

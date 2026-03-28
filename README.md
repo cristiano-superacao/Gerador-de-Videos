@@ -26,6 +26,7 @@ requirements.txt
 ## Rodando localmente
 
 > Importante: este projeto é Python (FastAPI) e não usa Node/NPM para build do front. Se você tentou `npm rum dev` (além do typo em "rum"), verá erro de `package.json` inexistente. Use os comandos abaixo.
+
 1. Crie e ative um ambiente virtual.
 1. Instale dependências:
 
@@ -86,6 +87,7 @@ Acesse:
 ```bash
 python scripts/seed.py
 python scripts/client_smoke_test.py
+pytest
 ```
 
 Para Railway com CLI já linkado ao projeto:
@@ -94,3 +96,74 @@ Para Railway com CLI já linkado ao projeto:
 railway run python scripts/seed.py
 railway run python scripts/client_smoke_test.py
 ```
+
+## Testes automatizados
+
+Os testes em pytest usam banco SQLite isolado por execução e validam autenticação,
+geração e administração sem depender do smoke test manual.
+
+Para validar a interface do dashboard no navegador:
+
+```bash
+npm install
+npm run install:browsers
+npm run test:e2e
+```
+
+Para um teste rápido de responsividade mobile do dashboard:
+
+```bash
+npm run test:e2e:mobile
+```
+
+O CI em [.github/workflows/python-app.yml](.github/workflows/python-app.yml) executa:
+
+```bash
+python -m pytest tests -q
+npm run test:e2e
+```
+
+## Smoke de APIs externas
+
+Use o smoke controlado abaixo apenas em ambiente com credenciais reais configuradas:
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\scripts\run_external_smoke.ps1
+```
+
+O script valida as variáveis obrigatórias antes de executar o smoke. Se preferir rodar manualmente:
+
+```bash
+set RUN_EXTERNAL_API_SMOKE=1
+python scripts/external_api_smoke.py
+```
+
+Para permitir um render real no Shotstack durante o smoke:
+
+```bash
+set EXTERNAL_API_SMOKE_ALLOW_SHOTSTACK_RENDER=1
+python scripts/external_api_smoke.py
+```
+
+No GitHub Actions, o smoke externo só roda se os secrets abaixo estiverem definidos:
+
+- `RUN_EXTERNAL_API_SMOKE`
+- `EXTERNAL_API_SMOKE_ALLOW_SHOTSTACK_RENDER`
+- `OPENAI_API_KEY`
+- `TAVILY_API_KEY`
+- `PERPLEXITY_API_KEY`
+- `SHOTSTACK_API_KEY`
+- `SHOTSTACK_OWNER_ID`
+
+## Git local e publicação
+
+Para este projeto, o repositório local pode ser inicializado com:
+
+```bash
+git init -b main
+git add .
+git commit -m "chore: preparar projeto"
+```
+
+Depois disso, basta conectar um remote e publicar normalmente.
+Se quiser apenas preparar o ambiente, o arquivo `.env` pode ser criado com base em `.env.example`.

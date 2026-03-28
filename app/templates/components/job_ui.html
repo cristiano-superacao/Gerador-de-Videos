@@ -1,0 +1,36 @@
+{% macro status_badge(status) -%}
+    {% if status in ['queued', 'simulado', 'fetching', 'rendering'] %}
+        <span class="badge badge-info">{{ status }}</span>
+    {% elif status in ['done', 'completed'] %}
+        <span class="badge badge-success">{{ status }}</span>
+    {% else %}
+        <span class="badge badge-muted">{{ status }}</span>
+    {% endif %}
+{%- endmacro %}
+
+{% macro output_actions(output_url, empty_label='-') -%}
+    {% if output_url and 'example.com/video-preview.mp4' not in output_url %}
+        <div class="flex gap-2">
+            <a
+                href="{{ output_url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-indigo-300 hover:text-indigo-200"
+                title="Visualizar vídeo"
+            >
+                Visualizar
+            </a>
+            <span class="text-slate-600">|</span>
+            <a
+                href="{{ output_url }}"
+                download
+                class="text-green-300 hover:text-green-200"
+                title="Baixar vídeo"
+            >
+                Baixar
+            </a>
+        </div>
+    {% else %}
+        <span class="text-slate-400">{{ empty_label }}</span>
+    {% endif %}
+{%- endmacro %}

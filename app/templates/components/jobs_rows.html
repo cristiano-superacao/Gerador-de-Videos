@@ -1,0 +1,18 @@
+{% import 'components/job_ui.html' as job_ui %}
+{% for job in jobs %}
+<tr class="border-b border-slate-900/80">
+    <td class="py-2">{{ job.id }}</td>
+    <td class="py-2">{{ job.script_variant }}</td>
+    <td class="py-2">
+        {{ job_ui.status_badge(job.status) }}
+        {% if job.status == 'simulado' %}
+            <span class="text-xs text-yellow-400 ml-2" title="Vídeo de demonstração">📹</span>
+        {% endif %}
+    </td>
+    <td class="py-2">{{ job.provider }}</td>
+    <td class="py-2">{{ job_ui.output_actions(job.output_url) }}</td>
+    <td class="py-2">{{ job.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="py-4 text-slate-400">Sem gerações ainda.</td></tr>
+{% endfor %}

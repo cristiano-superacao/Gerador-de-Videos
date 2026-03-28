@@ -6,32 +6,124 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.core.database import Base, SessionLocal, engine
-from app.core.security import hash_password
-from app.models.user import User
+from app.core.database import Base, SessionLocal, engine  # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.models.video import VideoJob  # noqa: E402
+from app.services.user_service import upsert_user  # noqa: E402
 
 
-def upsert_user(email: str, password: str, credits: int, is_admin: bool) -> None:
+SEED_MARKER = "[seed-demo]"
+DEMO_VIDEO_URLS = [
+    (
+        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
+        "8a85ba4a-58dc-4981-91ca-5289d9ae6d5e.mp4"
+    ),
+    (
+        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
+        "e8077f59-f17a-4e37-b703-6c8a16d7f49e.mp4"
+    ),
+    (
+        "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
+        "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4"
+    ),
+]
+
+
+def ensure_user(
+    email: str,
+    password: str,
+    credits: int,
+    is_admin: bool,
+) -> User:
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.email == email).first()
-        if user:
-            user.hashed_password = hash_password(password)
-            user.credits = credits
-            user.is_admin = is_admin
-            action = "updated"
-        else:
-            user = User(
-                email=email,
-                hashed_password=hash_password(password),
-                credits=credits,
-                is_admin=is_admin,
-            )
-            db.add(user)
-            action = "created"
-
+        existing_user = (
+            db.query(User)
+            .filter(User.email == email.lower().strip())
+            .first()
+        )
+        action = "updated" if existing_user else "created"
+        user = upsert_user(
+            db=db,
+            email=email,
+            password=password,
+            credits=credits,
+            is_admin=is_admin,
+        )
         db.commit()
-        print(f"user:{email}:{action}")
+        db.refresh(user)
+        print(f"user:{user.email}:{action}")
+        return user
+    finally:
+        db.close()
+
+
+def reset_seed_jobs(user_id: int) -> None:
+    db = SessionLocal()
+    try:
+        (
+            db.query(VideoJob)
+            .filter(VideoJob.user_id == user_id)
+            .filter(VideoJob.source_content.contains(SEED_MARKER))
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+def create_seed_jobs(user_id: int) -> None:
+    demo_jobs = [
+        {
+            "source_type": "text",
+            "source_content": (
+                f"{SEED_MARKER} Tendências de IA aplicada a vendas B2B."
+            ),
+            "script_variant": 1,
+            "status": "completed",
+            "provider": "shotstack",
+            "render_id": "seed-render-completed",
+            "output_url": DEMO_VIDEO_URLS[0],
+        },
+        {
+            "source_type": "link",
+            "source_content": (
+                f"{SEED_MARKER} https://example.com/relatorio-ia-industria"
+            ),
+            "script_variant": 2,
+            "status": "rendering",
+            "provider": "shotstack",
+            "render_id": "seed-render-rendering",
+            "output_url": "",
+        },
+        {
+            "source_type": "video",
+            "source_content": f"{SEED_MARKER} upload_seed_audio.mp3",
+            "script_variant": 3,
+            "status": "simulado",
+            "provider": "shotstack",
+            "render_id": "mock-render-id",
+            "output_url": DEMO_VIDEO_URLS[1],
+        },
+        {
+            "source_type": "text",
+            "source_content": (
+                f"{SEED_MARKER} Automação com IA para atendimento."
+            ),
+            "script_variant": 1,
+            "status": "queued",
+            "provider": "shotstack",
+            "render_id": "seed-render-queued",
+            "output_url": "",
+        },
+    ]
+
+    db = SessionLocal()
+    try:
+        for job_data in demo_jobs:
+            db.add(VideoJob(user_id=user_id, **job_data))
+        db.commit()
+        print(f"jobs:{user_id}:{len(demo_jobs)}")
     finally:
         db.close()
 
@@ -44,19 +136,35 @@ def main() -> None:
         "cristiano.s.santos@ba.estudante.senai.br",
     )
     app_user_password = os.getenv("SEED_APP_USER_PASSWORD", "18042016")
+    reviewer_email = os.getenv(
+        "SEED_REVIEWER_EMAIL",
+        "cliente.demo@agentesia.com",
+    )
+    reviewer_password = os.getenv("SEED_REVIEWER_PASSWORD", "teste123")
 
-    upsert_user(
+    admin_user = ensure_user(
         email="admin@agentesia.com",
         password=os.getenv("SEED_ADMIN_PASSWORD", "admin123"),
         credits=999,
         is_admin=True,
     )
-    upsert_user(
+    app_user = ensure_user(
         email=app_user_email,
         password=app_user_password,
         credits=50,
         is_admin=False,
     )
+    ensure_user(
+        email=reviewer_email,
+        password=reviewer_password,
+        credits=12,
+        is_admin=False,
+    )
+
+    reset_seed_jobs(admin_user.id)
+    reset_seed_jobs(app_user.id)
+    create_seed_jobs(admin_user.id)
+    create_seed_jobs(app_user.id)
 
     print("seed:ok")
 
