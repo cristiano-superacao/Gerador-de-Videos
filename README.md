@@ -143,6 +143,9 @@ Existe tambem um workflow dedicado para validar a instancia publicada no Railway
 Ele roda seed remoto, smoke HTTP, E2E desktop e E2E mobile diretamente contra a URL publica,
 desde que a variável `PRODUCTION_BASE_URL` esteja configurada no GitHub Actions.
 
+Os workflows legados de `Pylint` e `Python Package using Conda` foram removidos porque
+duplicavam o pipeline principal e falhavam sem agregar cobertura útil ao projeto atual.
+
 ## Smoke de APIs externas
 
 Use o smoke controlado abaixo apenas em ambiente com credenciais reais configuradas:
