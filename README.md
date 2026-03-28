@@ -100,9 +100,11 @@ python scripts/client_smoke_test.py
 Para Railway com CLI já linkado ao projeto:
 
 ```bash
-railway run python scripts/seed.py
-railway run python scripts/client_smoke_test.py
+powershell -ExecutionPolicy Bypass -File .\scripts\railway_seed_and_smoke.ps1
 ```
+
+O script usa a `DATABASE_PUBLIC_URL` do serviço Postgres para semear o banco remoto
+e depois executa o mesmo `client_smoke_test.py` contra a URL pública do serviço `api`.
 
 ## Testes automatizados
 
