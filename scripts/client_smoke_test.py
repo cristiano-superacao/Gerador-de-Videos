@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import httpx
@@ -40,11 +41,44 @@ def get_user_id_from_admin_page(html: str, email: str) -> int:
     raise RuntimeError(f"user lookup failed via admin page: {email}")
 
 
+def ensure_user_session(
+    client: httpx.Client,
+    email: str,
+    password: str,
+) -> None:
+    response = client.post(
+        "/login",
+        data={"email": email, "password": password},
+    )
+
+    if response.status_code == 200:
+        return
+
+    register_response = client.post(
+        "/register",
+        data={"email": email, "password": password},
+    )
+    assert_status(register_response, 200, "register")
+
+    response = client.post(
+        "/login",
+        data={"email": email, "password": password},
+    )
+    assert_status(response, 200, "login")
+
+
 def main() -> None:
     base_url = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
+    default_email = "cristiano.s.santos@ba.estudante.senai.br"
+    if base_url.startswith("https://"):
+        default_email = (
+            "smoke.railway."
+            f"{datetime.now().strftime('%Y%m%d%H%M%S')}@example.com"
+        )
+
     email = os.getenv(
         "TEST_APP_USER_EMAIL",
-        "cristiano.s.santos@ba.estudante.senai.br",
+        default_email,
     )
     password = os.getenv("TEST_APP_USER_PASSWORD", "18042016")
     admin_email = os.getenv("TEST_ADMIN_EMAIL", "admin@agentesia.com")
@@ -60,11 +94,7 @@ def main() -> None:
         response = client.get("/como-usar")
         assert_status(response, 200, "how-to")
 
-        response = client.post(
-            "/login",
-            data={"email": email, "password": password},
-        )
-        assert_status(response, 200, "login")
+        ensure_user_session(client, email, password)
 
         response = client.get("/dashboard")
         assert_status(response, 200, "dashboard")
