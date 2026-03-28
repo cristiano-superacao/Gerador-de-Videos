@@ -138,6 +138,11 @@ python -m pytest tests -q
 npm run test:e2e
 ```
 
+Existe tambem um workflow dedicado para validar a instancia publicada no Railway em
+[.github/workflows/railway-production-validation.yml](.github/workflows/railway-production-validation.yml).
+Ele roda seed remoto, smoke HTTP, E2E desktop e E2E mobile diretamente contra a URL publica,
+desde que o secret `RAILWAY_TOKEN` esteja configurado no GitHub.
+
 ## Smoke de APIs externas
 
 Use o smoke controlado abaixo apenas em ambiente com credenciais reais configuradas:
