@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
+from time import sleep
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
@@ -14,10 +17,13 @@ from app.routes import auth, dashboard, generation
 from app.services.user_service import ensure_admin_user
 
 
+logger = logging.getLogger(__name__)
+
+
 def initialize_application_state(app: FastAPI) -> None:
     from app.core.database import SessionLocal
 
-    Base.metadata.create_all(bind=engine)
+    initialize_database_schema()
 
     inspector = inspect(engine)
     if "video_jobs" in inspector.get_table_names():
@@ -51,6 +57,25 @@ def initialize_application_state(app: FastAPI) -> None:
             db.commit()
     finally:
         db.close()
+
+
+def initialize_database_schema() -> None:
+    last_error: OperationalError | None = None
+
+    for attempt in range(1, 6):
+        try:
+            Base.metadata.create_all(bind=engine)
+            return
+        except OperationalError as exc:
+            last_error = exc
+            logger.warning(
+                "database startup attempt %s failed; retrying",
+                attempt,
+            )
+            sleep(3)
+
+    if last_error is not None:
+        raise last_error
 
 
 @asynccontextmanager
