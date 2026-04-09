@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.routes.deps import get_admin_user, get_current_user
 from app.services.job_service import get_recent_jobs, serialize_job
+from app.services.video_gen import is_video_render_configured
 from app.services.video_gen import VideoGenerator
 from app.web import render_dashboard, render_jobs_rows, templates
 
@@ -49,27 +50,36 @@ async def dashboard_jobs_live(
     updated = False
 
     for job in jobs:
-        if job.provider != "shotstack":
-            continue
         if not job.render_id:
             continue
         if job.status not in pending_statuses:
             continue
 
-        status_payload = await generator.get_render_status(job.render_id)
+        try:
+            status_payload = await generator.get_render_status(
+                job.render_id,
+                provider=job.provider,
+            )
+        except TypeError:
+            status_payload = await generator.get_render_status(job.render_id)
         new_status = status_payload.get("status") or job.status
         new_output_url = status_payload.get("output_url")
+        new_status_message = status_payload.get("message")
 
         # Mantém o valor persistido quando o provider não retorna link novo.
         if new_output_url is None:
             new_output_url = job.output_url
+        if new_status_message is None:
+            new_status_message = job.status_message
 
         if (
             new_status != job.status
             or new_output_url != (job.output_url or "")
+            or new_status_message != (job.status_message or "")
         ):
             job.status = new_status
             job.output_url = new_output_url
+            job.status_message = new_status_message
             updated = True
 
     if updated:
@@ -79,7 +89,10 @@ async def dashboard_jobs_live(
         {
             "jobs": [serialize_job(job) for job in jobs],
             "html": render_jobs_rows(jobs),
-            "has_demo_mode": any(job.status == "simulado" for job in jobs),
+            "has_demo_mode": (
+                (not is_video_render_configured())
+                or any(job.status == "simulado" for job in jobs)
+            ),
         }
     )
 

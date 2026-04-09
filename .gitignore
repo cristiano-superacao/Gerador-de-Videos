@@ -4,6 +4,7 @@ __pycache__/
 .env
 .agentes_ia.db
 agentes_ia.db
+seed_validation.db
 .pytest_cache/
 .playwright-mcp/
 playwright-report/
@@ -21,3 +22,4 @@ Thumbs.db
 ENV/
 venv/
 static/*.map
+shotstack-*.png

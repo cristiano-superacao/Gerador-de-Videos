@@ -43,7 +43,6 @@ jobs:
         TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         SHOTSTACK_API_KEY: ${{ secrets.SHOTSTACK_API_KEY }}
-        SHOTSTACK_OWNER_ID: ${{ secrets.SHOTSTACK_OWNER_ID }}
       run: |
         python scripts/external_api_smoke.py
 

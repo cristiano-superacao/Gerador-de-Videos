@@ -21,8 +21,10 @@ class VideoJob(Base):
     script_variant = Column(Integer, nullable=False)
     status = Column(String(30), default="queued", nullable=False)
     provider = Column(String(50), default="shotstack", nullable=False)
+    requested_provider = Column(String(50), nullable=True)
     render_id = Column(String(120), nullable=True, index=True)
     output_url = Column(Text, nullable=True)
+    status_message = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

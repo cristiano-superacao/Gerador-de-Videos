@@ -6,6 +6,7 @@ test('dashboard alterna input de video e valida arquivo no cliente', async ({ pa
 
   await registerAndLogin(page, uniqueEmail);
   await expect(page.getByRole('heading', { name: 'Painel de Produção' })).toBeVisible();
+  await expect(page.getByText('Render real indisponível neste ambiente')).toBeVisible();
   await expect(page.locator('#source_file_group')).toBeHidden();
 
   await page.locator('#source_type').selectOption('video');
@@ -42,7 +43,10 @@ test('dashboard gera roteiros por texto e mostra tela de resultado', async ({ pa
   await expect(page.getByRole('heading', { name: 'Resultado da Geração' })).toBeVisible();
   await expect(page.getByText('Vídeo 1')).toBeVisible();
   await expect(
-    page.getByText('Configure SHOTSTACK_API_KEY e SHOTSTACK_OWNER_ID')
+    page.getByText('Os roteiros foram gerados, mas o vídeo externo não será publicado neste ambiente.')
+  ).toBeVisible();
+  await expect(
+    page.getByText('Configure SHOTSTACK_API_KEY para render real.')
   ).toHaveCount(3);
 });
 

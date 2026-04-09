@@ -39,6 +39,22 @@ def initialize_application_state(app: FastAPI) -> None:
                         "ADD COLUMN render_id VARCHAR(120)"
                     )
                 )
+        if "requested_provider" not in columns:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE video_jobs "
+                        "ADD COLUMN requested_provider VARCHAR(50)"
+                    )
+                )
+        if "status_message" not in columns:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE video_jobs "
+                        "ADD COLUMN status_message TEXT"
+                    )
+                )
 
     db = SessionLocal()
     try:

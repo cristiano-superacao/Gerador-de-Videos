@@ -138,6 +138,19 @@ def main() -> None:
         payload = response.json()
         if "jobs" not in payload:
             raise RuntimeError("jobs-live failed: payload sem campo jobs")
+        if payload["jobs"]:
+            first_job = payload["jobs"][0]
+            required_fields = {
+                "provider",
+                "requested_provider",
+                "status_message",
+            }
+            missing_fields = sorted(required_fields - set(first_job))
+            if missing_fields:
+                raise RuntimeError(
+                    "jobs-live failed: campos ausentes no payload: "
+                    + ", ".join(missing_fields)
+                )
 
         response = client.post("/logout")
         assert_status(response, 200, "logout")

@@ -1,22 +1,64 @@
 {% extends 'base.html' %}
 {% import 'components/job_ui.html' as job_ui %}
+{% import 'components/notice_card.html' as notice_card %}
 {% block content %}
 <section class="panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <h1 class="text-2xl font-bold">Resultado da Geração</h1>
+        <div>
+            <h1 class="text-2xl font-bold">Resultado da Geração</h1>
+            <p class="mt-1 text-xs sm:text-sm text-slate-400">
+                Provider ativo: <span class="text-slate-200 font-medium">{{ active_video_provider_label }}</span>
+            </p>
+        </div>
         <a href="/dashboard" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Voltar ao dashboard</a>
     </div>
+
+    {% if not video_render_configured %}
+        {{ notice_card.notice_card(
+            'amber',
+            'Os roteiros foram gerados, mas o vídeo externo não será publicado neste ambiente.',
+            video_render_alert_message,
+            'Variáveis ausentes: ' ~ (video_render_missing_settings | join(', ')) ~ '.'
+            if video_render_missing_settings else ''
+        ) }}
+    {% endif %}
+
+    {% if veo_quota_notice %}
+        {{ notice_card.notice_card(
+            'rose',
+            'O Veo não concluiu todos os renders',
+            veo_quota_notice
+        ) }}
+    {% endif %}
+
+    {% if veo_auto_fallback_notice %}
+        {{ notice_card.notice_card(
+            'sky',
+            'Fallback automático ativado',
+            veo_auto_fallback_notice
+        ) }}
+    {% endif %}
 
     <div class="grid md:grid-cols-3 gap-4">
         {% for item in created_jobs %}
         <article class="panel p-4">
+            {% if item.preview_image_url %}
+                <div class="mb-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+                    <img
+                        src="{{ item.preview_image_url }}"
+                        alt="Imagem-guia do vídeo {{ item.script_variant }}"
+                        class="aspect-[9/16] w-full object-cover"
+                    />
+                </div>
+            {% endif %}
             <h2 class="font-semibold mb-2">Vídeo {{ item.script_variant }}</h2>
             <p class="text-xs text-slate-400 mb-3 flex items-center gap-2 flex-wrap">
                 <span>Status:</span>
                 {{ job_ui.status_badge(item.status) }}
-                <span class="ml-2">Provider:</span>
-                <span class="badge badge-muted">{{ item.provider|capitalize }}</span>
             </p>
+            <div class="mb-3 text-xs text-slate-400">
+                {{ job_ui.provider_summary(item.provider, item.requested_provider) }}
+            </div>
             <p class="text-sm text-slate-300 whitespace-pre-wrap break-words leading-relaxed">{{ item.script }}</p>
             {% if item.message %}
                 <p class="mt-3 text-xs text-slate-400">{{ item.message }}</p>

@@ -9,8 +9,15 @@
             <span class="text-xs text-yellow-400 ml-2" title="Vídeo de demonstração">📹</span>
         {% endif %}
     </td>
-    <td class="py-2">{{ job.provider }}</td>
-    <td class="py-2">{{ job_ui.output_actions(job.output_url, job.status, 'Sem mídia') }}</td>
+    <td class="py-2">
+        {{ job_ui.provider_summary(job.provider, job.requested_provider) }}
+    </td>
+    <td class="py-2">
+        {{ job_ui.output_actions(job.output_url, job.status, 'Sem mídia') }}
+        {% if job.status_message %}
+            <p class="mt-1 max-w-xs text-xs text-slate-400">{{ job.status_message }}</p>
+        {% endif %}
+    </td>
     <td class="py-2">{{ job.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
 </tr>
 {% else %}

@@ -48,6 +48,8 @@ def serialize_job(job: VideoJob) -> dict:
         "script_variant": job.script_variant,
         "status": job.status,
         "provider": job.provider,
+        "requested_provider": job.requested_provider or job.provider,
         "output_url": normalize_output_url(job.output_url),
+        "status_message": job.status_message or "",
         "created_at": job.created_at.strftime("%d/%m/%Y %H:%M"),
     }

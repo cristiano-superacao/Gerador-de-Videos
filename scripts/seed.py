@@ -67,9 +67,27 @@ def create_seed_jobs(user_id: int) -> None:
             ),
             "script_variant": 1,
             "status": "simulado",
-            "provider": "shotstack",
+            "provider": "veo",
+            "requested_provider": "veo",
             "render_id": "mock-render-id",
             "output_url": "",
+            "status_message": (
+                "A Gemini API recusou a geração por limite de uso ou "
+                "quota esgotada."
+            ),
+        },
+        {
+            "source_type": "text",
+            "source_content": (
+                f"{SEED_MARKER} Panorama semanal de automacao comercial."
+            ),
+            "script_variant": 1,
+            "status": "done",
+            "provider": "veo",
+            "requested_provider": "veo",
+            "render_id": "seed-render-done",
+            "output_url": "https://cdn.example.com/seed-video.mp4",
+            "status_message": "Vídeo concluído no Veo.",
         },
         {
             "source_type": "link",
@@ -79,8 +97,13 @@ def create_seed_jobs(user_id: int) -> None:
             "script_variant": 2,
             "status": "rendering",
             "provider": "shotstack",
+            "requested_provider": "veo",
             "render_id": "seed-render-rendering",
             "output_url": "",
+            "status_message": (
+                "Veo indisponível por limite de uso ou quota esgotada. "
+                "O render foi reenviado automaticamente ao Shotstack."
+            ),
         },
         {
             "source_type": "video",
@@ -88,8 +111,10 @@ def create_seed_jobs(user_id: int) -> None:
             "script_variant": 3,
             "status": "simulado",
             "provider": "shotstack",
+            "requested_provider": "shotstack",
             "render_id": "mock-render-id",
             "output_url": "",
+            "status_message": "Modo demonstração sem link de vídeo.",
         },
         {
             "source_type": "text",
@@ -98,9 +123,26 @@ def create_seed_jobs(user_id: int) -> None:
             ),
             "script_variant": 1,
             "status": "queued",
-            "provider": "shotstack",
+            "provider": "veo",
+            "requested_provider": "veo",
             "render_id": "seed-render-queued",
             "output_url": "",
+            "status_message": (
+                "Geração enviada ao Veo com prompt textual do roteiro."
+            ),
+        },
+        {
+            "source_type": "link",
+            "source_content": (
+                f"{SEED_MARKER} https://example.com/checklist-produto-ia"
+            ),
+            "script_variant": 2,
+            "status": "fetching",
+            "provider": "shotstack",
+            "requested_provider": "shotstack",
+            "render_id": "seed-render-fetching",
+            "output_url": "",
+            "status_message": "Buscando status do render no Shotstack.",
         },
     ]
 

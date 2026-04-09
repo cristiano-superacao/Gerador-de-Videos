@@ -1,0 +1,21 @@
+{% macro notice_card(tone, title, message, detail='', spacing_class='mb-6') -%}
+    {% if message %}
+        {% if tone == 'amber' %}
+            {% set card_classes = 'border-amber-500/30 bg-amber-500/10 text-amber-100' %}
+            {% set detail_classes = 'text-amber-100/80' %}
+        {% elif tone == 'rose' %}
+            {% set card_classes = 'border-rose-500/30 bg-rose-500/10 text-rose-100' %}
+            {% set detail_classes = 'text-rose-100/80' %}
+        {% else %}
+            {% set card_classes = 'border-sky-500/30 bg-sky-500/10 text-sky-100' %}
+            {% set detail_classes = 'text-sky-100/80' %}
+        {% endif %}
+        <div class="{{ spacing_class }} rounded-2xl border p-4 text-sm {{ card_classes }}">
+            <p class="font-semibold">{{ title }}</p>
+            <p class="mt-1 {{ detail_classes }}">{{ message }}</p>
+            {% if detail %}
+                <p class="mt-2 text-xs {{ detail_classes }}">{{ detail }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+{%- endmacro %}

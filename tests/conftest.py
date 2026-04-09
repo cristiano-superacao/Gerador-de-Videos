@@ -13,7 +13,29 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import app.core.database as database_module  # noqa: E402
 import app.main as app_main  # noqa: E402
+from app.core.config import settings  # noqa: E402
 from app.core.database import Base  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def reset_runtime_settings(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "video_provider", "shotstack")
+    monkeypatch.setattr(settings, "shotstack_api_key", "")
+    monkeypatch.setattr(settings, "shotstack_owner_id", "")
+    monkeypatch.setattr(settings, "gemini_api_key", "")
+    monkeypatch.setattr(
+        settings,
+        "gemini_image_model",
+        "gemini-3.1-flash-image-preview",
+    )
+    monkeypatch.setattr(
+        settings,
+        "veo_model",
+        "veo-3.1-generate-preview",
+    )
+    monkeypatch.setattr(settings, "veo_aspect_ratio", "9:16")
+    monkeypatch.setattr(settings, "veo_resolution", "720p")
+    monkeypatch.setattr(settings, "veo_duration_seconds", 8)
 
 
 @pytest.fixture()

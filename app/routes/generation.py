@@ -11,7 +11,9 @@ from app.services.generation_rules import ALLOWED_MEDIA_EXTENSIONS
 from app.services.generation_rules import MAX_UPLOAD_SIZE_BYTES
 from app.services.generation_rules import get_allowed_media_extensions_label
 from app.services.job_service import get_recent_jobs
+from app.services.video_gen import get_active_video_provider
 from app.services.video_gen import VideoGenerator
+from app.web import build_video_render_state
 from app.web import render_dashboard, templates
 
 
@@ -131,8 +133,13 @@ async def create_generation(
             script_variant=index,
             status=render.get("status", "queued"),
             provider=render.get("provider", "shotstack"),
+            requested_provider=(
+                render.get("requested_provider")
+                or get_active_video_provider()
+            ),
             render_id=render.get("render_id") or None,
             output_url=render.get("output_url") or "",
+            status_message=render.get("message") or "",
         )
         db.add(job)
         created_jobs.append(
@@ -141,13 +148,17 @@ async def create_generation(
                 "script": script,
                 "status": job.status,
                 "provider": job.provider,
+                "requested_provider": job.requested_provider,
                 "output_url": job.output_url,
+                "preview_image_url": render.get("preview_image_url", ""),
                 "message": render.get("message", ""),
             }
         )
 
     current_user.credits -= 1
     db.commit()
+
+    render_state = build_video_render_state(items=created_jobs)
 
     return templates.TemplateResponse(
         request=request,
@@ -156,6 +167,11 @@ async def create_generation(
             "request": request,
             "user": current_user,
             "created_jobs": created_jobs,
+            **render_state,
+            "veo_auto_fallback_notice": render_state[
+                "veo_shotstack_fallback_notice"
+            ],
+            "veo_quota_notice": render_state["veo_quota_warning"],
         },
     )
 

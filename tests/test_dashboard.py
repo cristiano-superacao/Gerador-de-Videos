@@ -29,6 +29,8 @@ def test_dashboard_renders_empty_state_and_account_data(client):
     )
     assert '<tbody id="jobs_table_body">' in response.text
     assert '<script src="/static/dashboard.js"></script>' in response.text
+    assert "Render real indisponível neste ambiente" in response.text
+    assert "SHOTSTACK_API_KEY" in response.text
 
 
 def test_dashboard_embeds_initial_jobs_json(client, db_session):
@@ -43,8 +45,10 @@ def test_dashboard_embeds_initial_jobs_json(client, db_session):
         script_variant=2,
         status="simulado",
         provider="shotstack",
+        requested_provider="shotstack",
         render_id="mock-render-id",
         output_url="https://cdn.example.com/video.mp4",
+        status_message="Modo demonstração sem link de vídeo.",
     )
     db_session.add(job)
     db_session.commit()
@@ -56,6 +60,7 @@ def test_dashboard_embeds_initial_jobs_json(client, db_session):
     assert "https://cdn.example.com/video.mp4" in response.text
     assert "Visualizar" in response.text
     assert "Baixar" in response.text
+    assert "Modo demonstração sem link de vídeo." in response.text
 
 
 def test_dashboard_hides_suspended_demo_video_links(client, db_session):
@@ -70,11 +75,13 @@ def test_dashboard_hides_suspended_demo_video_links(client, db_session):
         script_variant=1,
         status="simulado",
         provider="shotstack",
+        requested_provider="shotstack",
         render_id="mock-render-id",
         output_url=(
             "https://cdn.shotstack.io/au/v1/msgtwx8iw6/"
             "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4"
         ),
+        status_message="Modo demonstração sem link de vídeo.",
     )
     db_session.add(job)
     db_session.commit()
@@ -82,7 +89,7 @@ def test_dashboard_hides_suspended_demo_video_links(client, db_session):
     response = client.get("/dashboard")
 
     assert response.status_code == 200
-    assert "Modo demonstração" in response.text
+    assert "Modo demonstração sem link de vídeo" in response.text
     assert "3b36b6b5-3d3e-4c5e-8e0e-9c8f6a0b5d3e.mp4" not in response.text
     assert "Visualizar" not in response.text
 
@@ -103,8 +110,10 @@ def test_dashboard_jobs_live_updates_pending_render(
         script_variant=1,
         status="queued",
         provider="shotstack",
+        requested_provider="shotstack",
         render_id="render-123",
         output_url="",
+        status_message="Aguardando render.",
     )
     db_session.add(pending_job)
     db_session.commit()
@@ -114,6 +123,7 @@ def test_dashboard_jobs_live_updates_pending_render(
         return {
             "status": "done",
             "output_url": "https://cdn.example.com/video-final.mp4",
+            "message": "Render concluído com sucesso.",
         }
 
     monkeypatch.setattr(
@@ -127,14 +137,19 @@ def test_dashboard_jobs_live_updates_pending_render(
 
     assert response.status_code == 200
     assert "html" in payload
-    assert payload["has_demo_mode"] is False
+    assert payload["has_demo_mode"] is True
     assert payload["jobs"][0]["status"] == "done"
     assert (
         payload["jobs"][0]["output_url"]
         == "https://cdn.example.com/video-final.mp4"
     )
+    assert (
+        payload["jobs"][0]["status_message"]
+        == "Render concluído com sucesso."
+    )
     assert "https://cdn.example.com/video-final.mp4" in payload["html"]
     assert pending_job.status == "done"
+    assert pending_job.status_message == "Render concluído com sucesso."
 
 
 def test_dashboard_requires_authentication(client):
@@ -149,3 +164,69 @@ def test_jobs_live_requires_authentication(client):
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Não autenticado"
+
+
+def test_dashboard_shows_veo_quota_and_fallback_notices(
+    client,
+    db_session,
+    monkeypatch,
+):
+    register(client, "veo.notice@example.com", "senha123")
+    login(client, "veo.notice@example.com", "senha123")
+    user = get_user(db_session, "veo.notice@example.com")
+
+    monkeypatch.setattr("app.web.get_active_video_provider", lambda: "veo")
+    monkeypatch.setattr("app.web.is_video_render_configured", lambda: True)
+    monkeypatch.setattr(
+        "app.web.get_missing_video_provider_settings",
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        "app.web.get_video_generation_alert_message",
+        lambda: "",
+    )
+    monkeypatch.setattr("app.web.get_video_provider_runtime_issue", lambda: "")
+
+    db_session.add(
+        VideoJob(
+            user_id=user.id,
+            source_type="text",
+            source_content="conteudo veo",
+            script_variant=1,
+            status="simulado",
+            provider="veo",
+            requested_provider="veo",
+            render_id="mock-render-id",
+            output_url="",
+            status_message=(
+                "A Gemini API recusou a geração por limite de uso ou "
+                "quota esgotada."
+            ),
+        )
+    )
+    db_session.add(
+        VideoJob(
+            user_id=user.id,
+            source_type="text",
+            source_content="conteudo fallback",
+            script_variant=2,
+            status="queued",
+            provider="shotstack",
+            requested_provider="veo",
+            render_id="shotstack-render-1",
+            output_url="",
+            status_message=(
+                "Veo indisponível por limite de uso ou quota esgotada. "
+                "O render foi reenviado automaticamente ao Shotstack."
+            ),
+        )
+    )
+    db_session.commit()
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "Veo com limite operacional neste ambiente" in response.text
+    assert "Fallback automático disponível" in response.text
+    assert "Solicitado: Veo" in response.text
+    assert "Executado: Shotstack" in response.text

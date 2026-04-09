@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'components/notice_card.html' as notice_card %}
 {% block content %}
 <section class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
     <article class="panel p-4">
@@ -24,13 +25,56 @@
 <div class="grid xl:grid-cols-3 gap-6">
     <section class="xl:col-span-2 panel p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h1 class="text-2xl font-bold">Painel de Produção</h1>
-            <span class="text-sm text-slate-300">
-                Créditos disponíveis: <strong>{{ user.credits }}</strong>
-            </span>
+            <div>
+                <h1 class="text-2xl font-bold">Painel de Produção</h1>
+                <p class="mt-1 text-xs sm:text-sm text-slate-400">
+                    Provider ativo: <span class="text-slate-200 font-medium">{{ active_video_provider_label }}</span>
+                </p>
+            </div>
+            <div class="flex flex-col items-start sm:items-end gap-2">
+                <span class="text-sm text-slate-300">
+                    Créditos disponíveis: <strong>{{ user.credits }}</strong>
+                </span>
+                {% if active_video_provider == 'veo' %}
+                    <span class="text-xs rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-sky-200">
+                        Imagem-guia automática + vídeo vertical 9:16
+                    </span>
+                {% endif %}
+            </div>
         </div>
 
         {% if error %}<p class="mb-4 text-red-300 text-sm">{{ error }}</p>{% endif %}
+
+        {% if not video_render_configured %}
+            {{ notice_card.notice_card(
+                'amber',
+                'Render real indisponível neste ambiente',
+                video_render_alert_message,
+                'Variáveis ausentes: ' ~ (video_render_missing_settings | join(', ')) ~ '.'
+                if video_render_missing_settings else '',
+                'mb-4'
+            ) }}
+        {% endif %}
+
+        {% if veo_quota_warning %}
+            {{ notice_card.notice_card(
+                'rose',
+                'Veo com limite operacional neste ambiente',
+                veo_quota_warning,
+                '',
+                'mb-4'
+            ) }}
+        {% endif %}
+
+        {% if veo_shotstack_fallback_notice %}
+            {{ notice_card.notice_card(
+                'sky',
+                'Fallback automático disponível',
+                veo_shotstack_fallback_notice,
+                '',
+                'mb-4'
+            ) }}
+        {% endif %}
 
         <form
             id="generation_form"
@@ -113,7 +157,11 @@
         <h2 class="text-lg font-semibold">Últimas Gerações</h2>
         <div id="demo_mode_badge" class="{% if not has_demo_mode %}hidden{% endif %}">
             <span class="px-3 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                ⚠️ Modo Demonstração - Configure as APIs para gerar vídeos reais
+                {% if not video_render_configured %}
+                    Render real indisponível: {{ video_render_alert_message }}
+                {% else %}
+                    Modo demonstração ativo em algumas gerações
+                {% endif %}
             </span>
         </div>
     </div>

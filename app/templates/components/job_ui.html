@@ -31,10 +31,22 @@
             </a>
         </div>
     {% elif status == 'simulado' %}
-        <span class="text-amber-300">Modo demonstração</span>
+        <span class="text-amber-300">Modo demonstração sem link de vídeo</span>
     {% elif status in ['queued', 'fetching', 'rendering'] %}
         <span class="text-slate-400">Aguardando render</span>
     {% else %}
         <span class="text-slate-400">{{ empty_label }}</span>
+    {% endif %}
+{%- endmacro %}
+
+{% macro provider_summary(provider, requested_provider=None) -%}
+    {% set requested = requested_provider or provider %}
+    {% if requested != provider %}
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="badge badge-muted">Solicitado: {{ requested|capitalize }}</span>
+            <span class="badge badge-info">Executado: {{ provider|capitalize }}</span>
+        </div>
+    {% else %}
+        <span class="badge badge-muted">{{ provider|capitalize }}</span>
     {% endif %}
 {%- endmacro %}

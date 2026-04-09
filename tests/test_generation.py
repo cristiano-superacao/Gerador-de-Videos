@@ -29,10 +29,16 @@ def test_generation_text_creates_three_jobs_and_consumes_credit(
     assert response.status_code == 200
     assert "Resultado da Geração" in response.text
     assert "Vídeo 1" in response.text
-    assert "Configure SHOTSTACK_API_KEY e SHOTSTACK_OWNER_ID" in response.text
+    assert "Configure SHOTSTACK_API_KEY para render real." in response.text
+    assert (
+        "Os roteiros foram gerados, mas o vídeo externo não será "
+        "publicado neste ambiente." in response.text
+    )
     assert user.credits == 4
     assert len(jobs) == 3
     assert all(job.status == "simulado" for job in jobs)
+    assert all(job.requested_provider == "shotstack" for job in jobs)
+    assert all(job.status_message for job in jobs)
 
 
 def test_generation_video_creates_jobs_from_upload(client, db_session):
